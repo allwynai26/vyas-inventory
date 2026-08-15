@@ -18,6 +18,7 @@ type Entry = {
   Medicine_ID?: string;
   Medicine_Name?: string;
   Quantity?: number;
+  Balance_After_Issue?: number;
   Entered_By?: string;
   Entry_Timestamp?: string;
 };
@@ -422,8 +423,12 @@ export default function ReportsPage() {
                             </td>
 
                             <td className="p-3 text-center">
-                              {item.Quantity}
-                            </td>
+  {item.Quantity}
+</td>
+
+<td className="p-3 text-center font-semibold text-blue-600">
+  {item.Balance_After_Issue}
+</td>
 
                           </tr>
 
@@ -576,26 +581,14 @@ export default function ReportsPage() {
                   
 
                   <thead>
-                    <tr className="bg-slate-800 text-white">
-
-                      <th className="px-6 py-3 text-left">
-                        Medicine
-                      </th>
-
-                      <th className="px-6 py-3 text-left">
-                        Batch
-                      </th>
-
-                      <th className="px-6 py-3 text-left">
-                        Expiry Date
-                      </th>
-
-                      <th className="p-3 text-center">
-                        Current Stock
-                      </th>
-
-                    </tr>
-                  </thead>
+  <tr className="bg-slate-800 text-white">
+    <th className="px-6 py-3 text-left">Date</th>
+    <th className="px-6 py-3 text-left">OP Number</th>
+    <th className="px-6 py-3 text-left">Medicine</th>
+    <th className="p-3 text-center">Issued</th>
+    <th className="p-3 text-center">Balance</th>
+  </tr>
+</thead>
 
                   <tbody>
 
@@ -603,7 +596,7 @@ export default function ReportsPage() {
 
                       <tr>
                         <td
-                          colSpan={4}
+                          colSpan={5}
                           className="p-5 text-center text-gray-500"
                         >
                           No medicines found
