@@ -20,7 +20,7 @@ export default function HomePage() {
       title: "Daily Entries",
       icon: "📋",
       href: "/entries",
-      description: "View and edit daily transactions",
+      description: "View daily transactions",
     },
     {
       title: "Stock Adjustments",
@@ -42,46 +42,35 @@ export default function HomePage() {
     },
   ];
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/logout");
-
-      localStorage.removeItem("vyas_user");
-
-      window.location.href = "/login";
-    } catch (error) {
-      console.error(error);
-      alert("Logout failed");
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 mb-6">
+        <div className="bg-white rounded-3xl shadow-lg p-6 md:p-8 mb-6">
+
           <div className="flex justify-between items-center">
 
             <div>
-              <h1 className="text-4xl font-bold">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
                 Vyas Inventory
               </h1>
 
-              <p className="text-gray-500 mt-2">
+              <p className="text-gray-800 mt-2 text-base md:text-lg font-medium">
                 Veterinary Medicine Inventory Management System
               </p>
             </div>
 
-            <button
-              onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-medium"
+            <Link
+              href="/login"
+              className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700"
             >
               Logout
-            </button>
+            </Link>
 
           </div>
+
         </div>
 
         {/* Module Cards */}
@@ -98,13 +87,14 @@ export default function HomePage() {
                 {module.icon}
               </div>
 
-              <h2 className="text-xl font-bold mb-2">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
                 {module.title}
               </h2>
 
-              <p className="text-gray-500">
+              <p className="text-gray-700 font-medium">
                 {module.description}
               </p>
+
             </Link>
           ))}
 
