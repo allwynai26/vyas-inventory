@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 
 export default function HomePage() {
@@ -40,6 +42,19 @@ export default function HomePage() {
     },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout");
+
+      localStorage.removeItem("vyas_user");
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error(error);
+      alert("Logout failed");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -47,13 +62,26 @@ export default function HomePage() {
         {/* Header */}
 
         <div className="bg-white rounded-3xl shadow-lg p-8 mb-6">
-          <h1 className="text-4xl font-bold">
-            Vyas Inventory
-          </h1>
+          <div className="flex justify-between items-center">
 
-          <p className="text-gray-500 mt-2">
-            Veterinary Medicine Inventory Management System
-          </p>
+            <div>
+              <h1 className="text-4xl font-bold">
+                Vyas Inventory
+              </h1>
+
+              <p className="text-gray-500 mt-2">
+                Veterinary Medicine Inventory Management System
+              </p>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-medium"
+            >
+              Logout
+            </button>
+
+          </div>
         </div>
 
         {/* Module Cards */}

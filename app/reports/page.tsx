@@ -2,375 +2,152 @@
 
 import { useEffect, useState } from "react";
 
+type Medicine = {
+  Medicine_ID?: string;
+  Medicine_Name?: string;
+  Batch_Number?: string;
+  Expiry_Date?: string;
+  Initial_Stock?: number;
+  Current_Stock?: number;
+};
+
+type Entry = {
+  Entry_ID?: string;
+  Issue_Date?: string;
+  OP_Number?: string;
+  Medicine_ID?: string;
+  Medicine_Name?: string;
+  Quantity?: number;
+  Entered_By?: string;
+  Entry_Timestamp?: string;
+};
+
 const API_URL =
   "https://script.google.com/macros/s/AKfycbzbcCJzVI12vs2K_vHhTxUhyhMveb8TQU-lfJYds_PDWvkw1k5-aI-UtNI8T09_E5UA/exec";
 
 export default function ReportsPage() {
-  const [reportType, setReportType] =
-    useState("current-stock");
+  const [reportType, setReportType] = useState("current-stock");
+  const [showReport, setShowReport] = useState(false);
 
-  const [showReport, setShowReport] =
-    useState(false);
+  const [medicine, setMedicine] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-  const [expiryDays, setExpiryDays] =
-    useState(30);
+  const [dateWiseDate, setDateWiseDate] = useState("");
 
-  const [medicine, setMedicine] =
-    useState("");
+  const [opWiseOP, setOpWiseOP] = useState("");
 
-  const [fromDate, setFromDate] =
-    useState("");
+  const [medicinesData, setMedicinesData] = useState<Medicine[]>([]);
+  const [entriesData, setEntriesData] = useState<Entry[]>([]);
 
-  const [toDate, setToDate] =
-    useState("");
-
-  const [medicinesData, setMedicinesData] =
-    useState<any[]>([]);
-
-  const [entriesData, setEntriesData] =
-    useState<any[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-
-  // =====================================================
-  // LOAD DATA
-  // =====================================================
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
-
   const loadData = async () => {
     try {
       setLoading(true);
 
-      const medicinesRes =
-        await fetch(
-          `${API_URL}?action=medicines`
-        );
-
-      const medicinesJson =
-        await medicinesRes.json();
-
-      if (Array.isArray(medicinesJson)) {
-        setMedicinesData(
-          medicinesJson
-        );
-      } else {
-        setMedicinesData([]);
-      }
-
-
-      const entriesRes =
-        await fetch(
-          `${API_URL}?action=entries`
-        );
-
-      const entriesJson =
-        await entriesRes.json();
-
-      if (Array.isArray(entriesJson)) {
-        setEntriesData(
-          entriesJson
-        );
-      } else {
-        setEntriesData([]);
-      }
-
-    } catch (error) {
-      console.error(
-        "Error loading data:",
-        error
+      const medicinesRes = await fetch(
+        `${API_URL}?action=medicines`
       );
+
+      const medicinesJson = await medicinesRes.json();
+
+      setMedicinesData(
+        Array.isArray(medicinesJson) ? medicinesJson : []
+      );
+
+      const entriesRes = await fetch(
+        `${API_URL}?action=entries`
+      );
+
+      const entriesJson = await entriesRes.json();
+
+      setEntriesData(
+        Array.isArray(entriesJson) ? entriesJson : []
+      );
+    } catch (error) {
+      console.error("Error loading reports data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-
-  // =====================================================
-  // GENERATE REPORT
-  // =====================================================
-
   const generateReport = () => {
     setShowReport(true);
   };
 
-
-  // =====================================================
-  // FORMAT DATE
-  // =====================================================
-
-  const formatDate = (value: any) => {
+  const formatDate = (value?: string) => {
     if (!value) return "";
 
-    const date =
-      new Date(value);
+    const text = String(value);
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return "";
+    if (text.length >= 10) {
+      return text.substring(0, 10);
     }
 
-    return date.toLocaleDateString(
-      "en-GB"
-    );
+    return text;
   };
 
+  /*
+    STOCK REGISTER FILTER
+  */
+  const stockRegisterEntries = entriesData.filter((item) => {
+    const issueDate = formatDate(item.Issue_Date);
 
-  // =====================================================
-  // DATE FOR FILTERING
-  // =====================================================
+    const medicineMatch =
+      !medicine ||
+      String(item.Medicine_Name || "")
+        .toLowerCase()
+        .trim() === medicine.toLowerCase().trim();
 
-  const getDateOnly = (
-    value: any
-  ) => {
-    if (!value) return null;
+    const fromDateMatch =
+      !fromDate || issueDate >= fromDate;
 
-    const date =
-      new Date(value);
+    const toDateMatch =
+      !toDate || issueDate <= toDate;
 
-    if (
-      Number.isNaN(
-        date.getTime()
-      )
-    ) {
-      return null;
-    }
-
-    return new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
+    return (
+      medicineMatch &&
+      fromDateMatch &&
+      toDateMatch
     );
-  };
+  });
 
+  /*
+    DATE-WISE REPORT FILTER
+  */
+  const dateWiseEntries = entriesData.filter((item) => {
+    if (!dateWiseDate) return true;
 
-  // =====================================================
-  // GET DAYS UNTIL EXPIRY
-  // =====================================================
-
-  const getDaysUntilExpiry = (
-    expiryDate: any
-  ) => {
-    if (!expiryDate) {
-      return Infinity;
-    }
-
-    const today =
-      new Date();
-
-    today.setHours(
-      0,
-      0,
-      0,
-      0
+    return (
+      formatDate(item.Issue_Date) === dateWiseDate
     );
+  });
 
-    const expiry =
-      new Date(
-        expiryDate
-      );
+  /*
+    OP-WISE REPORT FILTER
+  */
+  const opWiseEntries = entriesData.filter((item) => {
+    if (!opWiseOP) return true;
 
-    if (
-      Number.isNaN(
-        expiry.getTime()
-      )
-    ) {
-      return Infinity;
-    }
-
-    expiry.setHours(
-      0,
-      0,
-      0,
-      0
-    );
-
-    return Math.ceil(
-      (
-        expiry.getTime() -
-        today.getTime()
-      ) /
-        (
-          1000 *
-          60 *
-          60 *
-          24
-        )
-    );
-  };
-
-
-  // =====================================================
-  // EXPIRY REPORT DATA
-  // =====================================================
-
-  const expiryReportData =
-    medicinesData.filter(
-      (item: any) => {
-
-        const daysLeft =
-          getDaysUntilExpiry(
-            item.Expiry_Date
-          );
-
-        return (
-          daysLeft >= 0 &&
-          daysLeft <= expiryDays
-        );
-      }
-    );
-
-
-  // =====================================================
-  // STOCK REGISTER FILTER
-  // =====================================================
-
-  const stockRegisterData =
-    entriesData.filter(
-      (item: any) => {
-
-        // -----------------------------------------------
-        // MEDICINE FILTER
-        // -----------------------------------------------
-
-        if (medicine) {
-
-          const selectedMedicine =
-            medicine
-              .trim()
-              .toLowerCase();
-
-          const entryMedicine =
-            String(
-              item.Medicine_Name || ""
-            )
-              .trim()
-              .toLowerCase();
-
-          if (
-            selectedMedicine !==
-            entryMedicine
-          ) {
-            return false;
-          }
-        }
-
-
-        // -----------------------------------------------
-        // FROM DATE FILTER
-        // -----------------------------------------------
-
-        if (fromDate) {
-
-          const entryDate =
-            getDateOnly(
-              item.Issue_Date
-            );
-
-          const startDate =
-            getDateOnly(
-              fromDate
-            );
-
-          if (
-            !entryDate ||
-            !startDate
-          ) {
-            return false;
-          }
-
-          if (
-            entryDate <
-            startDate
-          ) {
-            return false;
-          }
-        }
-
-
-        // -----------------------------------------------
-        // TO DATE FILTER
-        // -----------------------------------------------
-
-        if (toDate) {
-
-          const entryDate =
-            getDateOnly(
-              item.Issue_Date
-            );
-
-          const endDate =
-            getDateOnly(
-              toDate
-            );
-
-          if (
-            !entryDate ||
-            !endDate
-          ) {
-            return false;
-          }
-
-          if (
-            entryDate >
-            endDate
-          ) {
-            return false;
-          }
-        }
-
-
-        return true;
-      }
-    );
-
-
-  // =====================================================
-  // UNIQUE MEDICINE LIST
-  // =====================================================
-
-  const uniqueMedicines =
-    Array.from(
-      new Map(
-        medicinesData.map(
-          (item: any) => [
-            String(
-              item.Medicine_Name || ""
-            )
-              .trim()
-              .toLowerCase(),
-
-            item
-          ]
-        )
-      ).values()
-    );
-
-
-  // =====================================================
-  // PAGE
-  // =====================================================
+    return String(item.OP_Number || "")
+      .toLowerCase()
+      .includes(opWiseOP.toLowerCase());
+  });
 
   return (
     <main className="min-h-screen bg-slate-100 p-4">
-
       <div className="max-w-7xl mx-auto">
 
-
-        {/* =================================================
-            PAGE HEADER
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* PAGE HEADER */}
+        {/* ===================================================== */}
 
         <div className="bg-white rounded-3xl shadow-lg p-6 mb-5">
-
           <h1 className="text-3xl font-bold">
             📊 Reports
           </h1>
@@ -378,13 +155,11 @@ export default function ReportsPage() {
           <p className="text-gray-500 mt-2">
             Inventory Reports
           </p>
-
         </div>
 
-
-        {/* =================================================
-            REPORT CONTROLS
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* REPORT SELECTION */}
+        {/* ===================================================== */}
 
         <div className="bg-white rounded-3xl shadow-lg p-6 mb-5">
 
@@ -392,27 +167,34 @@ export default function ReportsPage() {
             Report Type
           </label>
 
-
           <select
             value={reportType}
             onChange={(e) => {
-
-              setReportType(
-                e.target.value
-              );
-
+              setReportType(e.target.value);
               setShowReport(false);
 
+              if (e.target.value !== "stock-register") {
+                setMedicine("");
+                setFromDate("");
+                setToDate("");
+              }
+
+              if (e.target.value !== "date-wise") {
+                setDateWiseDate("");
+              }
+
+              if (e.target.value !== "op-wise") {
+                setOpWiseOP("");
+              }
             }}
-            className="w-full border rounded-xl p-3"
+            className="w-full border border-gray-300 rounded-xl p-3"
           >
+            <option value="current-stock">
+              📦 Current Stock Report
+            </option>
 
             <option value="stock-register">
               📖 Stock Register
-            </option>
-
-            <option value="current-stock">
-              📦 Current Stock Report
             </option>
 
             <option value="expiry">
@@ -426,63 +208,16 @@ export default function ReportsPage() {
             <option value="op-wise">
               🩺 OP-wise Report
             </option>
-
           </select>
 
-
-          {/* =================================================
-              EXPIRY SETTINGS
-          ================================================= */}
-
-          {reportType === "expiry" && (
-
-            <div className="mt-4 max-w-sm">
-
-              <label className="block mb-2 font-medium">
-                Show medicines expiring within (days)
-              </label>
-
-              <input
-                type="number"
-                min="0"
-                value={expiryDays}
-                onChange={(e) =>
-                  setExpiryDays(
-                    Math.max(
-                      0,
-                      Number(
-                        e.target.value
-                      )
-                    )
-                  )
-                }
-                className="w-full border rounded-xl p-3"
-                placeholder="e.g. 30"
-              />
-
-              <p className="text-sm text-gray-500 mt-1">
-                Only medicines with an expiry date from
-                today up to this number of days will be shown.
-              </p>
-
-            </div>
-
-          )}
-
-
-          {/* =================================================
-              STOCK REGISTER FILTERS
-          ================================================= */}
+          {/* ================================================= */}
+          {/* STOCK REGISTER FILTERS */}
+          {/* ================================================= */}
 
           {reportType === "stock-register" && (
-
-            <div className="grid md:grid-cols-3 gap-4 mt-4">
-
-
-              {/* MEDICINE */}
+            <div className="grid md:grid-cols-3 gap-4 mt-5">
 
               <div>
-
                 <label className="block mb-2 font-medium">
                   Medicine
                 </label>
@@ -490,47 +225,33 @@ export default function ReportsPage() {
                 <select
                   value={medicine}
                   onChange={(e) =>
-                    setMedicine(
-                      e.target.value
-                    )
+                    setMedicine(e.target.value)
                   }
-                  className="w-full border rounded-xl p-3"
+                  className="w-full border border-gray-300 rounded-xl p-3"
                 >
-
                   <option value="">
                     All Medicines
                   </option>
 
-
-                  {uniqueMedicines.map(
-                    (item: any) => (
-
+                  {medicinesData.map(
+                    (item, index) => (
                       <option
                         key={
                           item.Medicine_ID ||
-                          item.Medicine_Name
+                          index
                         }
                         value={
-                          item.Medicine_Name
+                          item.Medicine_Name || ""
                         }
                       >
-                        {
-                          item.Medicine_Name
-                        }
+                        {item.Medicine_Name}
                       </option>
-
                     )
                   )}
-
                 </select>
-
               </div>
 
-
-              {/* FROM DATE */}
-
               <div>
-
                 <label className="block mb-2 font-medium">
                   From Date
                 </label>
@@ -539,20 +260,13 @@ export default function ReportsPage() {
                   type="date"
                   value={fromDate}
                   onChange={(e) =>
-                    setFromDate(
-                      e.target.value
-                    )
+                    setFromDate(e.target.value)
                   }
-                  className="w-full border rounded-xl p-3"
+                  className="w-full border border-gray-300 rounded-xl p-3"
                 />
-
               </div>
 
-
-              {/* TO DATE */}
-
               <div>
-
                 <label className="block mb-2 font-medium">
                   To Date
                 </label>
@@ -561,12 +275,166 @@ export default function ReportsPage() {
                   type="date"
                   value={toDate}
                   onChange={(e) =>
-                    setToDate(
-                      e.target.value
-                    )
+                    setToDate(e.target.value)
                   }
-                  className="w-full border rounded-xl p-3"
+                  className="w-full border border-gray-300 rounded-xl p-3"
                 />
+              </div>
+
+            </div>
+          )}
+
+          {/* ================================================= */}
+          {/* DATE-WISE FILTER */}
+          {/* ================================================= */}
+
+          {reportType === "date-wise" && (
+            <div className="mt-5 max-w-sm">
+
+              <label className="block mb-2 font-medium">
+                Select Date
+              </label>
+
+              <input
+                type="date"
+                value={dateWiseDate}
+                onChange={(e) =>
+                  setDateWiseDate(e.target.value)
+                }
+                className="w-full border border-gray-300 rounded-xl p-3"
+              />
+
+            </div>
+          )}
+
+          {/* ================================================= */}
+          {/* OP-WISE FILTER */}
+          {/* ================================================= */}
+
+          {reportType === "op-wise" && (
+            <div className="mt-5 max-w-sm">
+
+              <label className="block mb-2 font-medium">
+                OP Number
+              </label>
+
+              <input
+                type="text"
+                value={opWiseOP}
+                onChange={(e) =>
+                  setOpWiseOP(e.target.value)
+                }
+                placeholder="Enter OP Number"
+                className="w-full border border-gray-300 rounded-xl p-3"
+              />
+
+            </div>
+          )}
+
+          <button
+            onClick={generateReport}
+            className="mt-5 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium"
+          >
+            Generate Report
+          </button>
+
+        </div>
+
+        {/* ===================================================== */}
+        {/* STOCK REGISTER */}
+        {/* ===================================================== */}
+
+        {showReport &&
+          reportType === "stock-register" && (
+
+            <div className="bg-white rounded-3xl shadow-lg p-6">
+
+              <h2 className="text-2xl font-bold mb-4">
+                📖 Stock Register
+              </h2>
+
+              <div className="overflow-x-auto">
+
+                <table className="w-full border-collapse">
+
+                  
+
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+
+                      <th className="px-6 py-3 text-left">
+                        Date
+                      </th>
+
+                      <th className="px-6 py-3 text-left">
+                        OP Number
+                      </th>
+
+                      <th className="px-6 py-3 text-left">
+                        Medicine
+                      </th>
+
+                      <th className="p-3 text-center">
+                        Quantity
+                      </th>
+
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {stockRegisterEntries.length === 0 ? (
+
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="p-5 text-center text-gray-500"
+                        >
+                          No entries found
+                        </td>
+                      </tr>
+
+                    ) : (
+
+                      stockRegisterEntries.map(
+                        (item, index) => (
+
+                          <tr
+                            key={
+                              item.Entry_ID ||
+                              index
+                            }
+                            className="border-b hover:bg-slate-50"
+                          >
+
+                            <td className="px-6 py-3 text-left">
+                              {formatDate(
+                                item.Issue_Date
+                              )}
+                            </td>
+
+                            <td className="px-6 py-3 text-left">
+                              {item.OP_Number}
+                            </td>
+
+                            <td className="px-6 py-3 text-left">
+                              {item.Medicine_Name}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              {item.Quantity}
+                            </td>
+
+                          </tr>
+
+                        )
+                      )
+
+                    )}
+
+                  </tbody>
+
+                </table>
 
               </div>
 
@@ -574,709 +442,441 @@ export default function ReportsPage() {
 
           )}
 
-
-          {/* =================================================
-              GENERATE BUTTON
-          ================================================= */}
-
-          <button
-            onClick={
-              generateReport
-            }
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
-          >
-            Generate Report
-          </button>
-
-        </div>
-
-
-        {/* =================================================
-            LOADING
-        ================================================= */}
-
-        {loading && (
-
-          <div className="bg-white rounded-3xl shadow-lg p-8 text-center">
-
-            Loading reports...
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-            STOCK REGISTER
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* CURRENT STOCK */}
+        {/* ===================================================== */}
 
         {showReport &&
-          !loading &&
-          reportType ===
-            "stock-register" && (
+          reportType === "current-stock" && (
 
-          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
 
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-
-              <h2 className="text-2xl font-bold">
-                📖 Stock Register
+              <h2 className="text-2xl font-bold mb-4">
+                📦 Current Stock Report
               </h2>
 
-              <div className="text-sm text-gray-500 mt-2 md:mt-0">
+              <div className="overflow-x-auto">
 
-                {medicine
-                  ? `Medicine: ${medicine}`
-                  : "All Medicines"}
+                <table className="w-full border-collapse">
 
-                {(fromDate ||
-                  toDate) && (
-                  <span>
-                    {" "}
-                    |{" "}
-                    {fromDate
-                      ? formatDate(
-                          fromDate
+                  
+
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
+
+                      <th className="px-6 py-3 text-left">
+                        Medicine
+                      </th>
+
+                      <th className="px-6 py-3 text-left">
+                        Batch
+                      </th>
+
+                      <th className="px-6 py-3 text-left">
+                        Expiry
+                      </th>
+
+                      <th className="p-3 text-center">
+                        Initial
+                      </th>
+
+                      <th className="p-3 text-center">
+                        Current
+                      </th>
+
+                    </tr>
+                  </thead>
+
+                  <tbody>
+
+                    {medicinesData.length === 0 ? (
+
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="p-5 text-center text-gray-500"
+                        >
+                          No medicines found
+                        </td>
+                      </tr>
+
+                    ) : (
+
+                      medicinesData.map(
+                        (item, index) => (
+
+                          <tr
+                            key={
+                              item.Medicine_ID ||
+                              index
+                            }
+                            className="border-b hover:bg-slate-50"
+                          >
+
+                            <td className="px-6 py-3 text-left">
+                              {item.Medicine_Name}
+                            </td>
+
+                            <td className="px-6 py-3 text-left">
+                              {item.Batch_Number}
+                            </td>
+
+                            <td className="px-6 py-3 text-left">
+                              {item.Expiry_Date
+                                ? new Date(
+                                    item.Expiry_Date
+                                  ).toLocaleDateString(
+                                    "en-GB"
+                                  )
+                                : ""}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              {item.Initial_Stock}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              {item.Current_Stock}
+                            </td>
+
+                          </tr>
+
                         )
-                      : "Start"}
+                      )
 
-                    {" - "}
+                    )}
 
-                    {toDate
-                      ? formatDate(
-                          toDate
-                        )
-                      : "Today"}
-                  </span>
-                )}
+                  </tbody>
+
+                </table>
 
               </div>
 
             </div>
 
+          )}
 
-            <div className="overflow-x-auto">
-
-              <table className="w-full table-auto border-collapse">
-
-
-                {/* HEADER */}
-
-                <thead>
-
-                  <tr className="bg-slate-800 text-white">
-
-                    <th className="p-3 text-center align-middle whitespace-nowrap">
-                      Date
-                    </th>
-
-                    <th className="p-3 text-center align-middle whitespace-nowrap">
-                      OP Number
-                    </th>
-
-                    <th className="p-3 text-center align-middle whitespace-nowrap">
-                      Medicine
-                    </th>
-
-                    <th className="p-3 text-center align-middle whitespace-nowrap">
-                      Quantity
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-
-                {/* BODY */}
-
-                <tbody>
-
-                  {stockRegisterData.map(
-                    (
-                      item: any,
-                      index: number
-                    ) => (
-
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="p-3 text-center align-middle">
-                        {
-                          formatDate(
-                            item.Issue_Date
-                          )
-                        }
-                      </td>
-
-
-                      <td className="p-3 text-center align-middle">
-                        {
-                          item.OP_Number
-                        }
-                      </td>
-
-
-                      <td className="p-3 text-left align-middle font-medium">
-                        {
-                          item.Medicine_Name
-                        }
-                      </td>
-
-
-                      <td className="p-3 text-center align-middle">
-                        {
-                          item.Quantity
-                        }
-                      </td>
-
-                    </tr>
-
-                  ))}
-
-
-                  {/* NO DATA */}
-
-                  {stockRegisterData.length ===
-                    0 && (
-
-                    <tr>
-
-                      <td
-                        colSpan={4}
-                        className="p-8 text-center text-gray-500"
-                      >
-
-                        {medicine
-                          ? `No stock entries found for ${medicine}.`
-                          : "No stock entries found."}
-
-                      </td>
-
-                    </tr>
-
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-            CURRENT STOCK REPORT
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* EXPIRY REPORT */}
+        {/* ===================================================== */}
 
         {showReport &&
-          !loading &&
-          reportType ===
-            "current-stock" && (
+          reportType === "expiry" && (
 
-          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
 
-            <h2 className="text-2xl font-bold mb-4">
-              📦 Current Stock Report
-            </h2>
+              <h2 className="text-2xl font-bold mb-4">
+                ⏰ Expiry Report
+              </h2>
 
+              <div className="overflow-x-auto">
 
-            <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
 
-              <table className="w-full table-auto border-collapse">
+                  
 
-                <thead>
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
 
-                  <tr className="bg-slate-800 text-white">
+                      <th className="px-6 py-3 text-left">
+                        Medicine
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Medicine
-                    </th>
+                      <th className="px-6 py-3 text-left">
+                        Batch
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Batch
-                    </th>
+                      <th className="px-6 py-3 text-left">
+                        Expiry Date
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Expiry
-                    </th>
+                      <th className="p-3 text-center">
+                        Current Stock
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Initial
-                    </th>
+                    </tr>
+                  </thead>
 
-                    <th className="p-3 text-center align-middle">
-                      Current
-                    </th>
+                  <tbody>
 
-                  </tr>
+                    {medicinesData.length === 0 ? (
 
-                </thead>
-
-
-                <tbody>
-
-                  {medicinesData.map(
-                    (
-                      item: any,
-                      index: number
-                    ) => (
-
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="p-3 text-left">
-                        {
-                          item.Medicine_Name
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          item.Batch_Number
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          formatDate(
-                            item.Expiry_Date
-                          )
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          item.Initial_Stock
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            Number(
-                              item.Current_Stock
-                            ) <= 10
-                              ? "bg-red-100 text-red-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="p-5 text-center text-gray-500"
                         >
+                          No medicines found
+                        </td>
+                      </tr>
 
-                          {
-                            item.Current_Stock
-                          }
+                    ) : (
 
-                        </span>
+                      medicinesData.map(
+                        (item, index) => (
 
-                      </td>
+                          <tr
+                            key={
+                              item.Medicine_ID ||
+                              index
+                            }
+                            className="border-b hover:bg-slate-50"
+                          >
 
-                    </tr>
+                            <td className="px-6 py-3 text-left">
+                              {item.Medicine_Name}
+                            </td>
 
-                  ))}
+                            <td className="px-6 py-3 text-left">
+                              {item.Batch_Number}
+                            </td>
 
+                            <td className="px-6 py-3 text-left">
+                              {item.Expiry_Date
+                                ? new Date(
+                                    item.Expiry_Date
+                                  ).toLocaleDateString(
+                                    "en-GB"
+                                  )
+                                : ""}
+                            </td>
 
-                  {medicinesData.length ===
-                    0 && (
+                            <td className="p-3 text-center">
+                              {item.Current_Stock}
+                            </td>
 
-                    <tr>
+                          </tr>
 
-                      <td
-                        colSpan={5}
-                        className="p-8 text-center text-gray-500"
-                      >
-                        No medicines found.
-                      </td>
+                        )
+                      )
 
-                    </tr>
+                    )}
 
-                  )}
+                  </tbody>
 
-                </tbody>
+                </table>
 
-              </table>
+              </div>
 
             </div>
 
-          </div>
+          )}
 
-        )}
-
-
-        {/* =================================================
-            EXPIRY REPORT
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* DATE-WISE ISSUE REPORT */}
+        {/* ===================================================== */}
 
         {showReport &&
-          !loading &&
-          reportType ===
-            "expiry" && (
+          reportType === "date-wise" && (
 
-          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
 
-            <h2 className="text-2xl font-bold mb-4">
-              ⏰ Expiry Report
-            </h2>
+              <h2 className="text-2xl font-bold mb-4">
+                📅 Date-wise Issue Report
+              </h2>
 
+              <div className="overflow-x-auto">
 
-            <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
 
-              <table className="w-full table-auto border-collapse">
+                  
 
-                <thead>
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
 
-                  <tr className="bg-slate-800 text-white">
+                      <th className="px-6 py-3 text-left">
+                        Date
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Medicine
-                    </th>
+                      <th className="px-6 py-3 text-left">
+                        OP Number
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Batch
-                    </th>
+                      <th className="px-6 py-3 text-left">
+                        Medicine
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Expiry Date
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Days Left
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Current Balance
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  {expiryReportData.map(
-                    (
-                      item: any,
-                      index: number
-                    ) => (
-
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="p-3 text-left align-middle">
-                        {
-                          item.Medicine_Name
-                        }
-                      </td>
-
-                      <td className="p-3 text-center align-middle">
-                        {
-                          item.Batch_Number
-                        }
-                      </td>
-
-                      <td className="p-3 text-center align-middle">
-                        {
-                          formatDate(
-                            item.Expiry_Date
-                          )
-                        }
-                      </td>
-
-                      <td className="p-3 text-center align-middle">
-
-                        {
-                          getDaysUntilExpiry(
-                            item.Expiry_Date
-                          )
-                        }
-
-                      </td>
-
-                      <td className="p-3 text-center align-middle font-semibold">
-
-                        {
-                          item.Current_Stock
-                        }
-
-                      </td>
+                      <th className="p-3 text-center">
+                        Quantity
+                      </th>
 
                     </tr>
+                  </thead>
 
-                  ))}
+                  <tbody>
 
+                    {dateWiseEntries.length === 0 ? (
 
-                  {expiryReportData.length ===
-                    0 && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="p-5 text-center text-gray-500"
+                        >
+                          No entries found
+                        </td>
+                      </tr>
 
-                    <tr>
+                    ) : (
 
-                      <td
-                        colSpan={5}
-                        className="p-6 text-center text-gray-500"
-                      >
+                      dateWiseEntries.map(
+                        (item, index) => (
 
-                        No medicines are expiring within{" "}
-                        {expiryDays} days.
+                          <tr
+                            key={
+                              item.Entry_ID ||
+                              index
+                            }
+                            className="border-b hover:bg-slate-50"
+                          >
 
-                      </td>
+                            <td className="px-6 py-3 text-left">
+                              {formatDate(
+                                item.Issue_Date
+                              )}
+                            </td>
 
-                    </tr>
+                            <td className="px-6 py-3 text-left">
+                              {item.OP_Number}
+                            </td>
 
-                  )}
+                            <td className="px-6 py-3 text-left">
+                              {item.Medicine_Name}
+                            </td>
 
-                </tbody>
+                            <td className="p-3 text-center">
+                              {item.Quantity}
+                            </td>
 
-              </table>
+                          </tr>
+
+                        )
+                      )
+
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
 
             </div>
 
-          </div>
+          )}
 
-        )}
-
-
-        {/* =================================================
-            DATE-WISE ISSUE REPORT
-        ================================================= */}
+        {/* ===================================================== */}
+        {/* OP-WISE REPORT */}
+        {/* ===================================================== */}
 
         {showReport &&
-          !loading &&
-          reportType ===
-            "date-wise" && (
+          reportType === "op-wise" && (
 
-          <div className="bg-white rounded-3xl shadow-lg p-6">
+            <div className="bg-white rounded-3xl shadow-lg p-6">
 
-            <h2 className="text-2xl font-bold mb-4">
-              📅 Date-wise Issue Report
-            </h2>
+              <h2 className="text-2xl font-bold mb-4">
+                🩺 OP-wise Report
+              </h2>
 
+              <div className="overflow-x-auto">
 
-            <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
 
-              <table className="w-full table-auto border-collapse">
+                  
 
-                <thead>
+                  <thead>
+                    <tr className="bg-slate-800 text-white">
 
-                  <tr className="bg-slate-800 text-white">
+                      <th className="px-6 py-3 text-left">
+                        OP Number
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Date
-                    </th>
+                      <th className="px-6 py-3 text-left">
+                        Medicine
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      OP Number
-                    </th>
+                      <th className="p-3 text-center">
+                        Quantity
+                      </th>
 
-                    <th className="p-3 text-center align-middle">
-                      Medicine
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Quantity
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  {entriesData.map(
-                    (
-                      item: any,
-                      index: number
-                    ) => (
-
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="p-3 text-center">
-                        {
-                          formatDate(
-                            item.Issue_Date
-                          )
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          item.OP_Number
-                        }
-                      </td>
-
-                      <td className="p-3 text-left">
-                        {
-                          item.Medicine_Name
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          item.Quantity
-                        }
-                      </td>
+                      <th className="px-6 py-3 text-left">
+                        Date
+                      </th>
 
                     </tr>
+                  </thead>
 
-                  ))}
+                  <tbody>
 
+                    {opWiseEntries.length === 0 ? (
 
-                  {entriesData.length ===
-                    0 && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="p-5 text-center text-gray-500"
+                        >
+                          No entries found
+                        </td>
+                      </tr>
 
-                    <tr>
+                    ) : (
 
-                      <td
-                        colSpan={4}
-                        className="p-6 text-center text-gray-500"
-                      >
-                        No entries found.
-                      </td>
+                      opWiseEntries.map(
+                        (item, index) => (
 
-                    </tr>
+                          <tr
+                            key={
+                              item.Entry_ID ||
+                              index
+                            }
+                            className="border-b hover:bg-slate-50"
+                          >
 
-                  )}
+                            <td className="px-6 py-3 text-left">
+                              {item.OP_Number}
+                            </td>
 
-                </tbody>
+                            <td className="px-6 py-3 text-left">
+                              {item.Medicine_Name}
+                            </td>
 
-              </table>
+                            <td className="p-3 text-center">
+                              {item.Quantity}
+                            </td>
+
+                            <td className="px-6 py-3 text-left">
+                              {formatDate(
+                                item.Issue_Date
+                              )}
+                            </td>
+
+                          </tr>
+
+                        )
+                      )
+
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
 
             </div>
 
+          )}
+
+        {/* ===================================================== */}
+        {/* LOADING MESSAGE */}
+        {/* ===================================================== */}
+
+        {loading && (
+          <div className="text-center text-gray-500 mt-5">
+            Loading report data...
           </div>
-
-        )}
-
-
-        {/* =================================================
-            OP-WISE REPORT
-        ================================================= */}
-
-        {showReport &&
-          !loading &&
-          reportType ===
-            "op-wise" && (
-
-          <div className="bg-white rounded-3xl shadow-lg p-6">
-
-            <h2 className="text-2xl font-bold mb-4">
-              🩺 OP-wise Report
-            </h2>
-
-
-            <div className="overflow-x-auto">
-
-              <table className="w-full table-auto border-collapse">
-
-                <thead>
-
-                  <tr className="bg-slate-800 text-white">
-
-                    <th className="p-3 text-center align-middle">
-                      OP Number
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Medicine
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Quantity
-                    </th>
-
-                    <th className="p-3 text-center align-middle">
-                      Date
-                    </th>
-
-                  </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                  {entriesData.map(
-                    (
-                      item: any,
-                      index: number
-                    ) => (
-
-                    <tr
-                      key={index}
-                      className="border-b hover:bg-slate-50"
-                    >
-
-                      <td className="p-3 text-center">
-                        {
-                          item.OP_Number
-                        }
-                      </td>
-
-                      <td className="p-3 text-left">
-                        {
-                          item.Medicine_Name
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          item.Quantity
-                        }
-                      </td>
-
-                      <td className="p-3 text-center">
-                        {
-                          formatDate(
-                            item.Issue_Date
-                          )
-                        }
-                      </td>
-
-                    </tr>
-
-                  ))}
-
-
-                  {entriesData.length ===
-                    0 && (
-
-                    <tr>
-
-                      <td
-                        colSpan={4}
-                        className="p-6 text-center text-gray-500"
-                      >
-                        No entries found.
-                      </td>
-
-                    </tr>
-
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-          </div>
-
         )}
 
       </div>
-
     </main>
   );
 }
