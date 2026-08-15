@@ -158,16 +158,16 @@ export default function IssuePage() {
 
         <div className="bg-white rounded-3xl shadow-lg p-5">
 
-          <h1 className="text-2xl font-bold text-center mb-1">
+          <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">
             💊 Issue Medicine
           </h1>
 
-          <p className="text-center text-gray-500 mb-6">
+          <p className="text-center text-gray-700 mb-6 text-lg">
             Vyas Inventory
           </p>
 
           <div className="mb-4">
-            <label className="font-medium block mb-2">
+            <label className="font-semibold text-gray-800 block mb-2">
               Issue Date
             </label>
 
@@ -175,12 +175,12 @@ export default function IssuePage() {
               type="date"
               value={issueDate}
               onChange={(e) => setIssueDate(e.target.value)}
-              className="w-full border rounded-xl p-3"
+              className="w-full border border-gray-300 rounded-xl p-3 text-black bg-white"
             />
           </div>
 
           <div className="mb-4">
-            <label className="font-medium block mb-2">
+            <label className="font-semibold text-gray-800 block mb-2">
               OP Number
             </label>
 
@@ -189,12 +189,12 @@ export default function IssuePage() {
               value={opNumber}
               onChange={(e) => setOpNumber(e.target.value)}
               placeholder="Enter OP Number"
-              className="w-full border rounded-xl p-3"
+              className="w-full border border-gray-300 rounded-xl p-3 text-black bg-white placeholder:text-gray-500"
             />
           </div>
 
           <div className="mb-4">
-            <label className="font-medium block mb-2">
+            <label className="font-semibold text-gray-800 block mb-2">
               Search Medicine
             </label>
 
@@ -205,7 +205,7 @@ export default function IssuePage() {
                 setMedicineSearch(e.target.value)
               }
               placeholder="Type medicine name..."
-              className="w-full border rounded-xl p-3"
+              className="w-full border border-gray-300 rounded-xl p-3 text-black bg-white placeholder:text-gray-500"
             />
 
             {medicineSearch && (
@@ -223,14 +223,12 @@ export default function IssuePage() {
                     }}
                     className="p-3 cursor-pointer hover:bg-blue-100 border-b"
                   >
-                    <div>
+                    <div className="font-medium text-gray-900">
                       {medicine.Medicine_Name}
                     </div>
 
-                    <div className="text-sm text-green-600">
-                      Available :
-                      {" "}
-                      {medicine.Current_Stock}
+                    <div className="text-sm text-green-700 font-medium">
+                      Available : {medicine.Current_Stock}
                     </div>
                   </div>
 
@@ -243,21 +241,19 @@ export default function IssuePage() {
           {selectedMedicine && (
             <div className="mb-4 bg-green-50 p-3 rounded-xl">
 
-              <div className="font-medium">
+              <div className="font-semibold text-gray-900">
                 {selectedMedicine.Medicine_Name}
               </div>
 
-              <div className="text-green-700">
-                Available Stock :
-                {" "}
-                {selectedMedicine.Current_Stock}
+              <div className="text-green-700 font-medium">
+                Available Stock : {selectedMedicine.Current_Stock}
               </div>
 
             </div>
           )}
 
           <div className="mb-4">
-            <label className="font-medium block mb-2">
+            <label className="font-semibold text-gray-800 block mb-2">
               Quantity
             </label>
 
@@ -266,13 +262,13 @@ export default function IssuePage() {
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="Enter Quantity"
-              className="w-full border rounded-xl p-3"
+              className="w-full border border-gray-300 rounded-xl p-3 text-black bg-white placeholder:text-gray-500"
             />
           </div>
 
           <button
             onClick={addMedicine}
-            className="w-full bg-blue-600 text-white p-3 rounded-xl font-semibold"
+            className="w-full bg-blue-600 text-white p-3 rounded-xl font-semibold text-lg"
           >
             + Add Medicine
           </button>
@@ -281,12 +277,12 @@ export default function IssuePage() {
 
         <div className="bg-white rounded-3xl shadow-lg p-5 mt-4">
 
-          <h2 className="font-bold text-lg mb-3">
+          <h2 className="font-bold text-xl text-gray-900 mb-3">
             Added Medicines
           </h2>
 
           {medicineList.length === 0 ? (
-            <p className="text-gray-500">
+            <p className="text-gray-700">
               No medicines added
             </p>
           ) : (
@@ -298,11 +294,11 @@ export default function IssuePage() {
               >
                 <div>
 
-                  <div className="font-medium">
+                  <div className="font-semibold text-gray-900">
                     {item.medicineName}
                   </div>
 
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-600">
                     Qty : {item.quantity}
                   </div>
 
@@ -322,10 +318,8 @@ export default function IssuePage() {
             ))
           )}
 
-          <div className="mt-4 text-center text-sm text-gray-500">
-            Total Medicines Added :
-            {" "}
-            {medicineList.length}
+          <div className="mt-4 text-center text-gray-700 font-medium">
+            Total Medicines Added : {medicineList.length}
           </div>
 
         </div>
