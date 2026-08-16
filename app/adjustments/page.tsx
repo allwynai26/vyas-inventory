@@ -2,9 +2,6 @@
 
 import { getApiUrl } from "@/lib/getApiUrl";
 import { useEffect, useState } from "react";
-
-const API_URL = getApiUrl();
-
 type Medicine = {
   Medicine_ID: string;
   Medicine_Name: string;
@@ -18,6 +15,7 @@ type Medicine = {
 };
 
 export default function AdjustmentsPage() {
+  const API_URL = getApiUrl();
 
   // =====================================================
   // STATES

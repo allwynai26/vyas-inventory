@@ -16,8 +16,8 @@ type Medicine = {
   Current_Stock: number;
 };
 
-const API_URL = getApiUrl();
 export default function MedicinesPage() {
+  const API_URL = getApiUrl();
   const [search, setSearch] = useState("");
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [loading, setLoading] = useState(true);

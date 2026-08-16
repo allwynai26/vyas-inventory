@@ -28,8 +28,9 @@ type Entry = {
   Species?: string;
 };
 
-const API_URL = getApiUrl();
 export default function ReportsPage() {
+
+  const API_URL = getApiUrl();
   const [reportType, setReportType] = useState("current-stock");
   const [showReport, setShowReport] = useState(false);
 
