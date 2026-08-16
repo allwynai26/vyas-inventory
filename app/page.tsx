@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
+  const router = useRouter();
+
   const modules = [
     {
       title: "Medicine Master",
@@ -42,6 +45,21 @@ export default function HomePage() {
     },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+      });
+
+      localStorage.removeItem("vyas_user");
+
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-100 p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
@@ -62,12 +80,12 @@ export default function HomePage() {
               </p>
             </div>
 
-            <Link
-              href="/login"
+            <button
+              onClick={handleLogout}
               className="bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700"
             >
               Logout
-            </Link>
+            </button>
 
           </div>
 

@@ -33,17 +33,15 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (result.status === "success") {
+        localStorage.setItem(
+          "vyas_user",
+          JSON.stringify(result.user)
+        );
 
-  localStorage.setItem(
-    "vyas_user",
-    JSON.stringify(result.user)
-  );
-
-  document.cookie =
-    "vyas_logged_in=true; path=/";
-
-  router.push("/");
-}
+        router.push("/");
+      } else {
+        alert(result.message || "Invalid Login");
+      }
     } catch (error) {
       console.error(error);
       alert("Login failed");
