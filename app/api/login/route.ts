@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbzbcCJzVI12vs2K_vHhTxUhyhMveb8TQU-lfJYds_PDWvkw1k5-aI-UtNI8T09_E5UA/exec";
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();
 
     const mobile = body.mobile;
     const password = body.password;
+    const apiUrl = body.apiUrl;
 
     const response = await fetch(
-      `${API_URL}?action=login&mobile=${encodeURIComponent(
+      `${apiUrl}?action=login&mobile=${encodeURIComponent(
         mobile
       )}&password=${encodeURIComponent(
         password
@@ -55,9 +53,9 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({
-  status: "success",
-  user: result.user,
-});
+      status: "success",
+      user: result.user,
+    });
 
   } catch (error) {
 

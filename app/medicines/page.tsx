@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiUrl } from "@/lib/getApiUrl";
 import { useEffect, useState, useRef } from "react";
 import * as XLSX from "xlsx";
 
@@ -15,9 +16,7 @@ type Medicine = {
   Current_Stock: number;
 };
 
-const API_URL =
-  "https://script.google.com/macros/s/AKfycbzbcCJzVI12vs2K_vHhTxUhyhMveb8TQU-lfJYds_PDWvkw1k5-aI-UtNI8T09_E5UA/exec";
-
+const API_URL = getApiUrl();
 export default function MedicinesPage() {
   const [search, setSearch] = useState("");
   const [medicines, setMedicines] = useState<Medicine[]>([]);

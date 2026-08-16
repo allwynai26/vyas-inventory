@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { HOSPITALS } from "@/lib/hospitals";
 
 export default function LoginPage() {
   const router = useRouter();
 
+  const [hospital, setHospital] = useState("KAD");
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,12 +21,19 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
+      const selectedHospital =
+        HOSPITALS.find(
+          (h) => h.code === hospital
+        );
+
       const response = await fetch("/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          hospital,
+          apiUrl: selectedHospital?.apiUrl,
           mobile,
           password,
         }),
@@ -36,6 +45,16 @@ export default function LoginPage() {
         localStorage.setItem(
           "vyas_user",
           JSON.stringify(result.user)
+        );
+
+        localStorage.setItem(
+          "hospital_code",
+          hospital
+        );
+
+        localStorage.setItem(
+          "api_url",
+          selectedHospital?.apiUrl || ""
         );
 
         router.push("/");
@@ -58,11 +77,30 @@ export default function LoginPage() {
           Vyas Inventory Login
         </h1>
 
+        <select
+          value={hospital}
+          onChange={(e) =>
+            setHospital(e.target.value)
+          }
+          className="w-full border p-3 rounded-xl mb-3"
+        >
+          {HOSPITALS.map((h) => (
+            <option
+              key={h.code}
+              value={h.code}
+            >
+              {h.name}
+            </option>
+          ))}
+        </select>
+
         <input
           type="text"
           placeholder="Mobile Number"
           value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
+          onChange={(e) =>
+            setMobile(e.target.value)
+          }
           className="w-full border p-3 rounded-xl mb-3"
         />
 
@@ -70,7 +108,9 @@ export default function LoginPage() {
           type="password"
           placeholder="Password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
           className="w-full border p-3 rounded-xl mb-4"
         />
 
@@ -79,7 +119,9 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full bg-blue-600 text-white p-3 rounded-xl"
         >
-          {loading ? "Logging In..." : "Login"}
+          {loading
+            ? "Logging In..."
+            : "Login"}
         </button>
 
       </div>

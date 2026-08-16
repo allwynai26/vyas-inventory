@@ -1,5 +1,6 @@
 "use client";
 
+import { getApiUrl } from "@/lib/getApiUrl";
 import { useEffect, useState } from "react";
 
 type Medicine = {
@@ -34,9 +35,7 @@ export default function IssuePage() {
     }[]
   >([]);
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbzbcCJzVI12vs2K_vHhTxUhyhMveb8TQU-lfJYds_PDWvkw1k5-aI-UtNI8T09_E5UA/exec";
-
+  const API_URL = getApiUrl();
   useEffect(() => {
     loadMedicines();
   }, []);
