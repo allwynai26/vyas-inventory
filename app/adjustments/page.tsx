@@ -46,6 +46,10 @@ export default function AdjustmentsPage() {
   const [saving, setSaving] =
     useState(false);
 
+  // Logged-in user's name, used for Entered_By
+  const [enteredBy, setEnteredBy] =
+    useState("");
+
 
   // =====================================================
   // ADJUSTMENT TYPES
@@ -118,6 +122,41 @@ export default function AdjustmentsPage() {
     }
 
   };
+
+
+  // =====================================================
+  // LOAD LOGGED-IN USER
+  // =====================================================
+
+  useEffect(() => {
+
+    try {
+
+      const storedUser =
+        localStorage.getItem(
+          "vyas_user"
+        );
+
+      if (storedUser) {
+
+        const parsedUser =
+          JSON.parse(
+            storedUser
+          );
+
+        setEnteredBy(
+          parsedUser.User_Name || ""
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
+
+  }, []);
 
 
   // =====================================================
@@ -262,6 +301,11 @@ export default function AdjustmentsPage() {
       params.append(
         "quantity",
         String(qty)
+      );
+
+      params.append(
+        "enteredBy",
+        enteredBy
       );
 
 

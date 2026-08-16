@@ -9,6 +9,13 @@ type Medicine = {
   Current_Stock: number;
 };
 
+type MedicineListItem = {
+  medicineId: string;
+  medicineName: string;
+  quantity: number;
+  availableStock: number;
+};
+
 export default function IssuePage() {
   const [issueDate, setIssueDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -26,18 +33,25 @@ export default function IssuePage() {
   // Prevent duplicate submissions
   const [saving, setSaving] = useState(false);
 
-  const [medicineList, setMedicineList] = useState<
-    {
-      medicineId: string;
-      medicineName: string;
-      quantity: number;
-      availableStock: number;
-    }[]
-  >([]);
+  // Logged-in user's name, used for Entered_By
+  const [enteredBy, setEnteredBy] = useState("");
+
+  const [medicineList, setMedicineList] = useState<MedicineListItem[]>([]);
 
   const API_URL = getApiUrl();
   useEffect(() => {
     loadMedicines();
+
+    try {
+      const storedUser = localStorage.getItem("vyas_user");
+
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setEnteredBy(parsedUser.User_Name || "");
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }, []);
 
   const loadMedicines = async () => {
@@ -136,7 +150,8 @@ export default function IssuePage() {
           `&medicineName=${encodeURIComponent(
             item.medicineName
           )}` +
-          `&quantity=${item.quantity}`;
+          `&quantity=${item.quantity}` +
+          `&enteredBy=${encodeURIComponent(enteredBy)}`;
 
         const response = await fetch(url);
 
