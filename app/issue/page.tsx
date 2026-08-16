@@ -22,6 +22,9 @@ export default function IssuePage() {
 
   const [quantity, setQuantity] = useState("");
 
+  // Prevent duplicate submissions
+  const [saving, setSaving] = useState(false);
+
   const [medicineList, setMedicineList] = useState<
     {
       medicineId: string;
@@ -108,6 +111,9 @@ export default function IssuePage() {
   };
 
   const submitData = async () => {
+    // Prevent double click / duplicate submission
+    if (saving) return;
+
     if (!opNumber) {
       alert("Enter OP Number");
       return;
@@ -119,6 +125,9 @@ export default function IssuePage() {
     }
 
     try {
+      // Start saving
+      setSaving(true);
+
       for (const item of medicineList) {
         const url =
           `${API_URL}` +
@@ -149,6 +158,9 @@ export default function IssuePage() {
     } catch (error) {
       console.error(error);
       alert("Error saving data");
+    } finally {
+      // Saving finished — enable button again
+      setSaving(false);
     }
   };
 
@@ -326,19 +338,31 @@ export default function IssuePage() {
 
         <div className="grid grid-cols-2 gap-3 mt-4">
 
+          {/* SUBMIT BUTTON */}
           <button
             onClick={submitData}
-            className="bg-green-600 text-white py-3 rounded-xl font-semibold"
+            disabled={saving}
+            className={`text-white py-3 rounded-xl font-semibold ${
+              saving
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600"
+            }`}
           >
-            Submit
+            {saving ? "Saving..." : "Submit"}
           </button>
 
+          {/* NEW OP BUTTON */}
           <button
             onClick={() => {
               setOpNumber("");
               setMedicineList([]);
             }}
-            className="bg-indigo-600 text-white py-3 rounded-xl font-semibold"
+            disabled={saving}
+            className={`text-white py-3 rounded-xl font-semibold ${
+              saving
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-indigo-600"
+            }`}
           >
             New OP
           </button>
